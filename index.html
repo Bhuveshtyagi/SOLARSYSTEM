@@ -1,3 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECHOES OF THE UNIVERSE — 3D Solar System Explorer</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <script src="./three.global.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --void-black: #05070D;
+      --slate-panel: #0B0F19;
+      --blue-accent: #3B82F6;
+      --starlight-text: #EDF2FF;
+    }
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background-color: var(--void-black);
+      color: #EDF2FF;
+      font-family: 'Space Grotesk', sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .font-sans {
+      font-family: 'Inter', sans-serif;
+    }
+    .glass-nav {
+      background: rgba(11, 15, 25, 0.72);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+    .glass-card {
+      background: rgba(11, 15, 25, 0.70);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      opacity: 0.72;
+      transition: background 0.3s ease, border-color 0.3s ease, opacity 0.3s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card:hover {
+      background: rgba(11, 15, 25, 0.95);
+      border-color: rgba(255, 255, 255, 0.22);
+      opacity: 1;
+    }
+    .glass-dock {
+      background: rgba(11, 15, 25, 0.75);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+    }
+    .planet-tag {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      pointer-events: auto;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .planet-tag:hover {
+      transform: translate(-50%, -115%) scale(1.08);
+    }
+    .drawer-tab {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out forwards;
+    }
+    .drawer-tab.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 768px) {
+      #mobileBlocker {
+        display: flex !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-[#05070D] text-[#EDF2FF] w-screen h-screen relative overflow-hidden">
+  <div id="mobileBlocker" class="fixed inset-0 z-50 bg-[#05070D] flex flex-col items-center justify-center p-6 text-center select-none" style="display: none;">
+    <div class="max-w-md w-full glass-card rounded-2xl p-8 flex flex-col items-center border border-white/15 shadow-2xl">
+      <div class="w-16 h-16 rounded-full border border-blue-400/40 flex items-center justify-center mb-5 bg-white/[0.03]">
+        <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div class="text-[11px] font-mono tracking-[0.25em] text-blue-400 uppercase font-semibold mb-2">DESKTOP WORKSTATION REQUIRED</div>
+      <h2 class="text-2xl font-bold text-white tracking-tight mb-3">PLEASE OPEN ON DESKTOP</h2>
+      <p class="text-xs text-slate-300 leading-relaxed font-sans mb-6">
+        ECHOES OF THE UNIVERSE is engineered for high-performance desktop displays and precision mouse controls. The full 3D orbital physics, ACES tone-mapped WebGL shaders, and high-resolution NASA telemetry require a desktop or laptop environment.
+      </p>
+      <div class="w-full p-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs font-mono text-slate-200 flex items-center justify-center space-x-2">
+        <span>🖥️</span>
+        <span class="tracking-wide">SWITCH TO DESKTOP OR LAPTOP</span>
+      </div>
+    </div>
+  </div>
+  <div id="canvas-container" class="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing z-0"></div>
+  <div id="labels-container" class="absolute inset-0 w-full h-full pointer-events-none z-10 overflow-hidden"></div>
+  <header class="absolute top-0 left-0 right-0 z-30 px-6 py-4 flex items-center justify-between pointer-events-none">
+    <div class="flex items-center space-x-3 pointer-events-auto">
+      <div class="w-8 h-8 rounded-full border border-blue-400/40 flex items-center justify-center relative bg-white/[0.02]">
+        <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-sm tracking-[0.2em] text-white">ECHOES</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-white/10 border border-white/20 text-slate-300">SOL SYSTEM</span>
+        </div>
+        <div class="text-[10px] font-mono text-slate-400 tracking-wider">
+          NASA IMAGERY
+        </div>
+      </div>
+    </div>
+    <div class="hidden md:flex items-center space-x-2 pointer-events-auto glass-nav px-3 py-1.5 rounded-full text-xs font-mono">
+      <span class="text-slate-400 text-[10px] uppercase">DISTANCE SCALE:</span>
+      <button onclick="setScaleMode('real')" id="btnScaleReal" class="px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-white text-[#0B0F19]">
+        TRUE RELATIVE AU
+      </button>
+      <button onclick="setScaleMode('compact')" id="btnScaleCompact" class="px-3 py-1 rounded-full text-[11px] font-semibold transition-all text-slate-400 hover:text-white">
+        COMPACT ORRERY
+      </button>
+      <div class="w-px h-3.5 bg-white/10 mx-1"></div>
+      <button onclick="toggleOrbits()" id="btnOrbits" class="px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-white/15 border border-white/25 text-white flex items-center space-x-1.5 hover:bg-white/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+        <span id="orbitsLabel">ORBIT PATHS: ON</span>
+      </button>
+    </div>
+    <div class="flex items-center space-x-2.5 pointer-events-auto">
+      <div class="glass-nav px-2.5 py-1 rounded-full flex items-center space-x-1 text-xs font-mono">
+        <button onclick="setSpeed(0)" id="spd-0" class="px-2 py-0.5 rounded-full text-white/40 hover:text-white transition-colors">0X</button>
+        <button onclick="setSpeed(0.5)" id="spd-05" class="px-2 py-0.5 rounded-full text-white/40 hover:text-white transition-colors">0.5X</button>
+        <button onclick="setSpeed(1)" id="spd-1" class="px-2.5 py-0.5 rounded-full bg-white/20 text-white font-bold">1X</button>
+        <button onclick="setSpeed(5)" id="spd-5" class="px-2 py-0.5 rounded-full text-white/40 hover:text-white transition-colors">5X</button>
+        <button onclick="setSpeed(25)" id="spd-25" class="px-2 py-0.5 rounded-full text-white/40 hover:text-white transition-colors">25X</button>
+      </div>
+      <button onclick="toggleAudio()" id="btnAudio" class="glass-nav w-8 h-8 rounded-full flex items-center justify-center text-xs text-white/80 hover:text-white transition-colors">
+        <span id="audioIcon">🔊</span>
+      </button>
+      <button onclick="zoomToOverview()" class="glass-nav px-3.5 py-1.5 rounded-full text-xs font-mono text-slate-200 border border-white/15 hover:bg-white/10 transition-all flex items-center space-x-1.5">
+        <span>↺</span>
+        <span class="hidden sm:inline">OVERVIEW</span>
+      </button>
+    </div>
+  </header>
+  <aside id="planetCard" class="absolute top-20 right-6 w-[430px] max-w-[calc(100vw-3rem)] max-h-[calc(100vh-7rem)] glass-card rounded-2xl p-5 z-30 transform translate-x-[130%] pointer-events-none flex flex-col justify-between overflow-y-auto">
+    <div>
+      <div class="flex items-center justify-between pb-3 border-b border-white/10">
+        <div class="flex items-center space-x-2 font-mono text-[10px] text-slate-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+          <span id="cardBadge" class="tracking-widest uppercase font-semibold text-slate-200">TERRESTRIAL PLANET
+        </div>
+        <button onclick="zoomToOverview()" class="text-slate-400 hover:text-white text-xs font-mono transition-colors px-2 py-0.5 rounded hover:bg-white/10">
+          ✕ ESC
+        </button>
+      </div>
+      <div class="relative w-full h-44 rounded-xl mt-3.5 overflow-hidden border border-white/10 bg-[#070A12] group">
+        <img id="planetWebImg" src="" alt="Planet Photo" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onerror="handleImageError(this)">
+        <div class="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-black/30 pointer-events-none"></div>
+        <div class="absolute top-2.5 left-2.5 bg-black/75 backdrop-blur px-2.5 py-0.5 rounded text-[9px] font-mono text-slate-300 border border-white/15 flex items-center space-x-1">
+          <span>🛰️</span>
+          <span id="nasaCreditTag">NASA / JPL-CALTECH</span>
+        </div>
+        <button onclick="openImageLightbox()" class="absolute bottom-2.5 right-2.5 bg-black/75 hover:bg-white/20 text-white transition-colors px-2.5 py-1 rounded text-[10px] font-mono border border-white/15 flex items-center space-x-1">
+          <span>🔍</span>
+          <span>EXPAND PHOTO</span>
+        </button>
+        <div id="thumbStrip" class="absolute bottom-2.5 left-2.5 flex items-center space-x-1.5"></div>
+      </div>
+      <div class="mt-4 mb-3">
+        <div class="flex items-baseline justify-between">
+          <h2 id="cardTitle" class="text-2xl font-bold text-white tracking-tight">Earth (Terra)</h2>
+          <span id="cardOrder" class="font-mono text-[11px] text-slate-400">PLANET III</span>
+        </div>
+        <div class="flex items-center space-x-2 text-xs font-mono text-slate-400 mt-0.5">
+          <span id="cardAU" class="text-white font-bold">1.00 AU</span>
+          <span>•</span>
+          <span id="cardKm">149,598,000 km from Sun</span>
+        </div>
+        <div class="text-[11px] font-mono text-blue-400 mt-1 flex items-center space-x-1.5">
+          <span>⟷ DISTANCE TO EARTH:</span>
+          <span id="cardEarthDist" class="text-slate-200 font-medium">0.00 AU (0 km)</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-1 bg-white/[0.04] p-1 rounded-lg border border-white/5 font-mono text-[10px] mb-3.5">
+        <button onclick="switchDrawerTab('overview')" id="dtabBtn-overview" class="flex-1 py-1 rounded font-semibold bg-white/15 text-white">OVERVIEW</button>
+        <button onclick="switchDrawerTab('specs')" id="dtabBtn-specs" class="flex-1 py-1 rounded font-semibold text-slate-400 hover:text-white">ATMOSPHERE</button>
+        <button onclick="switchDrawerTab('missions')" id="dtabBtn-missions" class="flex-1 py-1 rounded font-semibold text-slate-400 hover:text-white">MISSIONS</button>
+      </div>
+      <div id="dtab-overview" class="drawer-tab active">
+        <div class="grid grid-cols-2 gap-2 font-mono text-xs mb-3.5">
+          <div class="bg-white/[0.03] p-2.5 rounded-xl border border-white/[0.05]">
+            <div class="text-[9px] text-slate-400 uppercase">RADIUS</div>
+            <div id="cardRadius" class="text-white font-medium text-xs mt-0.5">6,371 km</div>
+          </div>
+          <div class="bg-white/[0.03] p-2.5 rounded-xl border border-white/[0.05]">
+            <div class="text-[9px] text-slate-400 uppercase">ORBITAL PERIOD</div>
+            <div id="cardPeriod" class="text-white font-medium text-xs mt-0.5">365.25 Days</div>
+          </div>
+          <div class="bg-white/[0.03] p-2.5 rounded-xl border border-white/[0.05]">
+            <div class="text-[9px] text-slate-400 uppercase">SURFACE TEMP</div>
+            <div id="cardTemp" class="text-slate-200 font-medium text-xs mt-0.5">15°C (288 K)</div>
+          </div>
+          <div class="bg-white/[0.03] p-2.5 rounded-xl border border-white/[0.05]">
+            <div class="text-[9px] text-slate-400 uppercase">GRAVITY</div>
+            <div id="cardGravity" class="text-white font-medium text-xs mt-0.5">1.00 g (9.8 m/s²)</div>
+          </div>
+        </div>
+        <p id="cardBio" class="text-xs text-slate-300 leading-relaxed font-sans font-light">
+          The only confirmed haven of life in the universe, stabilized by a liquid water hydrosphere, active tectonic recycling, and a geomagnetic shield.
+        </p>
+      </div>
+      <div id="dtab-specs" class="drawer-tab">
+        <div class="space-y-2.5 font-mono text-xs mb-3">
+          <div class="text-[10px] text-slate-300 font-bold uppercase tracking-wider">ATMOSPHERIC GAS DISTRIBUTION</div>
+          <div id="atmoBars" class="space-y-1.5"></div>
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+            <div class="bg-white/[0.03] p-2 rounded-lg">
+              <div class="text-[9px] text-slate-400 uppercase">ESCAPE VELOCITY</div>
+              <div id="cardEscape" class="text-white font-semibold mt-0.5">11.18 km/s</div>
+            </div>
+            <div class="bg-white/[0.03] p-2 rounded-lg">
+              <div class="text-[9px] text-slate-400 uppercase">SURFACE PRESSURE</div>
+              <div id="cardPressure" class="text-white font-semibold mt-0.5">101.3 kPa (1 bar)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="dtab-missions" class="drawer-tab">
+        <div class="space-y-2 font-mono text-xs mb-3">
+          <div class="text-[10px] text-slate-300 font-bold uppercase tracking-wider">KEY HISTORIC MISSIONS</div>
+          <div id="missionsList" class="space-y-1.5"></div>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center space-x-2 pt-3 border-t border-white/10 font-mono text-xs mt-3">
+      <button onclick="navigatePlanet(-1)" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-all flex items-center justify-center space-x-1 border border-white/5">
+        <span>←</span>
+        <span>PREV</span>
+      </button>
+      <button onclick="navigatePlanet(1)" class="flex-1 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white transition-all flex items-center justify-center space-x-1 font-bold border border-white/10">
+        <span>NEXT</span>
+        <span>→</span>
+      </button>
+    </div>
+  </aside>
+  <div id="photoLightbox" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6" onclick="closeImageLightbox()">
+    <div class="relative max-w-5xl max-h-[90vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <button onclick="closeImageLightbox()" class="absolute -top-10 right-0 text-white/70 hover:text-white font-mono text-xs px-3 py-1 rounded bg-white/10 border border-white/15">
+        ✕ CLOSE [ESC]
+      </button>
+      <img id="lightboxImg" src="" alt="High-Res NASA Capture" class="max-w-full max-h-[75vh] object-contain rounded-xl border border-white/20 shadow-2xl">
+      <div class="mt-4 text-center">
+        <h3 id="lightboxTitle" class="font-bold text-lg text-white">Earth (Terra)</h3>
+        <p id="lightboxCaption" class="text-xs font-mono text-slate-300 mt-1">NASA / Apollo 17 Original 70mm Hasselblad Film Capture</p>
+      </div>
+    </div>
+  </div>
+  <footer class="absolute bottom-5 left-0 right-0 z-30 flex justify-center pointer-events-none px-4">
+    <nav class="glass-dock px-3.5 py-2.5 rounded-full flex items-center space-x-1 sm:space-x-2 pointer-events-auto overflow-x-auto max-w-full">
+      <button onclick="selectPlanet('sun')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="sun">
+        <span class="w-3.5 h-3.5 rounded-full bg-[#FFB703] group-hover:scale-125 transition-transform shadow-[0_0_12px_#FFB703]"></span>
+        <span class="hidden md:inline font-medium">Sun</span>
+      </button>
+      <button onclick="selectPlanet('mercury')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="mercury">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#9E9E9E] group-hover:scale-125 transition-transform"></span>
+        <span class="hidden md:inline">Mercury</span>
+      </button>
+      <button onclick="selectPlanet('venus')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="venus">
+        <span class="w-3 h-3 rounded-full bg-[#E0A96D] group-hover:scale-125 transition-transform"></span>
+        <span class="hidden md:inline">Venus</span>
+      </button>
+      <button onclick="selectPlanet('earth')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="earth">
+        <span class="w-3 h-3 rounded-full bg-[#4DA3FF] group-hover:scale-125 transition-transform shadow-[0_0_10px_#4DA3FF]"></span>
+        <span class="hidden md:inline">Earth</span>
+      </button>
+      <button onclick="selectPlanet('mars')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="mars">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#E2583E] group-hover:scale-125 transition-transform"></span>
+        <span class="hidden md:inline">Mars</span>
+      </button>
+      <span class="text-white/20 px-1 hidden lg:inline">|</span>
+      <button onclick="selectPlanet('jupiter')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="jupiter">
+        <span class="w-3.5 h-3.5 rounded-full bg-[#D4A373] group-hover:scale-125 transition-transform"></span>
+        <span class="hidden md:inline">Jupiter</span>
+      </button>
+      <button onclick="selectPlanet('saturn')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="saturn">
+        <span class="w-3.5 h-3.5 rounded-full bg-[#F4D06F] group-hover:scale-125 transition-transform"></span>
+        <span class="hidden md:inline">Saturn</span>
+      </button>
+      <button onclick="selectPlanet('uranus')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="uranus">
+        <span class="w-3 h-3 rounded-full bg-[#70D6FF] group-hover:scale-125 transition-transform"></span>
+        <span class="hidden md:inline">Uranus</span>
+      </button>
+      <button onclick="selectPlanet('neptune')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="neptune">
+        <span class="w-3 h-3 rounded-full bg-[#3A86FF] group-hover:scale-125 transition-transform"></span>
+        <span class="hidden md:inline">Neptune</span>
+      </button>
+      <button onclick="selectPlanet('pluto')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="pluto">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#C7A284] group-hover:scale-125 transition-transform"></span>
+        <span class="hidden md:inline">Pluto</span>
+      </button>
+    </nav>
+  </footer>
+  <div class="fixed bottom-5 right-6 z-30 pointer-events-auto font-mono text-xs flex items-center space-x-2 glass-dock px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl text-slate-300 hover:text-white transition-all hover:border-white/30">
+    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+    <span class="tracking-widest uppercase text-[11px]">MADE BY <strong class="text-white font-bold tracking-normal">BHUVESH</strong></span>
+  </div>
+  <script>
+    const solarData = [
+      {
+        id: 'sun',
+        name: 'Sol (The Sun)',
+        order: 'STAR // CENTRAL EMITTER',
+        type: 'Yellow Dwarf (G2V Star)',
+        badge: 'YELLOW DWARF STAR // 0.00 AU',
+        realAU: 0,
+        distKm: '0 km',
+        radiusKm: '696,340 km',
+        period: '25.38 Days (Diff. Rotation)',
+        temp: '5,778 K (Surface) / 15M K (Core)',
+        gravity: '28.0 g (274 m/s²)',
+        velocity: '0.00 km/s',
+        escapeKm: '617.5 km/s',
+        pressure: '24.77 Peta-Pascals',
+        moons: '8 Planets, 5 Dwarf Planets',
+        bio: 'The luminous gravitational anchor of the solar system, converting 600M tons of hydrogen into helium every second via core thermonuclear fusion.',
+        size: 34,
+        compactRadius: 0,
+        realRadius: 0,
+        orbitSpeed: 0,
+        axialTilt: 0.12,
+        rotationSpeed: 0.002,
+        colorHex: '#FFB703',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001434/GSFC_20171208_Archive_e001434~orig.jpg',
+            caption: 'NASA Solar Dynamics Observatory (SDO) Extreme UV Flare',
+            credit: 'NASA / SDO / GSFC'
+          },
+          {
+            url: 'https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001427/GSFC_20171208_Archive_e001427~orig.jpg',
+            caption: 'SDO Multi-Wavelength Coronal Plasma Loops',
+            credit: 'NASA / GSFC'
+          }
+        ],
+        gases: [{ name: 'Hydrogen (H)', pct: 73.4 }, { name: 'Helium (He)', pct: 24.8 }, { name: 'Heavy Elements', pct: 1.8 }],
+        missions: [
+          { name: 'Parker Solar Probe', year: '2018–Present', detail: 'Closest human craft to the Sun, diving through outer corona.' },
+          { name: 'SOHO / SDO', year: '1995–Present', detail: '24/7 continuous helioseismology and coronal flare telemetry.' }
+        ]
+      },
+      {
+        id: 'mercury',
+        name: 'Mercury',
+        order: 'PLANET I',
+        type: 'Terrestrial Planet',
+        badge: 'TERRESTRIAL // 0.39 AU',
+        realAU: 0.387,
+        distKm: '57,910,000 km',
+        radiusKm: '2,439 km',
+        period: '87.97 Days',
+        temp: '-180°C to 430°C',
+        gravity: '0.38 g (3.7 m/s²)',
+        velocity: '47.36 km/s',
+        escapeKm: '4.25 km/s',
+        pressure: '< 1 nPa',
+        moons: '0 Moons',
+        bio: 'Smallest planet and closest to the Sun. Heavily cratered silicate crust surrounding a massive metallic iron core, experiencing wild 600°C diurnal swings.',
+        size: 4.8,
+        compactRadius: 65,
+        realRadius: 60,
+        orbitSpeed: 0.040,
+        axialTilt: 0.001,
+        rotationSpeed: 0.005,
+        colorHex: '#9E9E9E',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA15190/PIA15190~orig.jpg',
+            caption: 'NASA MESSENGER Global Enhanced Color Mosaic',
+            credit: 'NASA / JHUAPL / Carnegie'
+          }
+        ],
+        gases: [{ name: 'Oxygen (O2)', pct: 42 }, { name: 'Sodium (Na)', pct: 29 }, { name: 'Hydrogen (H2)', pct: 22 }, { name: 'Helium (He)', pct: 6 }],
+        missions: [
+          { name: 'MESSENGER', year: '2011–2015', detail: 'First spacecraft to orbit Mercury, discovering water ice in polar craters.' },
+          { name: 'BepiColombo', year: '2018–Present', detail: 'ESA/JAXA dual orbiter arriving for high-resolution magnetometry.' }
+        ]
+      },
+      {
+        id: 'venus',
+        name: 'Venus',
+        order: 'PLANET II',
+        type: 'Terrestrial Planet',
+        badge: 'TERRESTRIAL // 0.72 AU',
+        realAU: 0.723,
+        distKm: '108,200,000 km',
+        radiusKm: '6,052 km',
+        period: '224.70 Days (Retrograde)',
+        temp: '465°C (738 K)',
+        gravity: '0.90 g (8.87 m/s²)',
+        velocity: '35.02 km/s',
+        escapeKm: '10.36 km/s',
+        pressure: '9.3 MPa (92 bar)',
+        moons: '0 Moons',
+        bio: 'Shrouded in dense, reflective clouds of toxic sulfuric acid with a crushing 92-bar carbon dioxide atmosphere driven by runaway greenhouse heating.',
+        size: 9.0,
+        compactRadius: 95,
+        realRadius: 110,
+        orbitSpeed: 0.025,
+        axialTilt: 3.1,
+        rotationSpeed: -0.003,
+        colorHex: '#E0A96D',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA00104/PIA00104~orig.jpg',
+            caption: 'NASA Magellan Synthetic Aperture Radar Global Topography',
+            credit: 'NASA / JPL'
+          }
+        ],
+        gases: [{ name: 'Carbon Dioxide (CO2)', pct: 96.5 }, { name: 'Nitrogen (N2)', pct: 3.5 }, { name: 'Sulfur Dioxide (SO2)', pct: 0.015 }],
+        missions: [
+          { name: 'Magellan', year: '1989–1994', detail: 'Radar mapped 98% of Venus surface through opaque cloud deck.' },
+          { name: 'Akatsuki', year: '2015–Present', detail: 'JAXA orbiter studying atmospheric super-rotation and gravity waves.' }
+        ]
+      },
+      {
+        id: 'earth',
+        name: 'Earth (Terra)',
+        order: 'PLANET III',
+        type: 'Terrestrial Planet',
+        badge: 'HABITABLE BIOSPHERE // 1.00 AU',
+        realAU: 1.000,
+        distKm: '149,598,000 km',
+        radiusKm: '6,371 km',
+        period: '365.25 Days',
+        temp: '15°C (288 K)',
+        gravity: '1.00 g (9.81 m/s²)',
+        velocity: '29.78 km/s',
+        escapeKm: '11.18 km/s',
+        pressure: '101.3 kPa (1 atm)',
+        moons: '1 Moon (Luna)',
+        bio: 'The only confirmed haven of biological life in the known universe, stabilized by a liquid water hydrosphere, active tectonic recycling, and a geomagnetic shield.',
+        size: 9.5,
+        compactRadius: 130,
+        realRadius: 155,
+        orbitSpeed: 0.020,
+        axialTilt: 0.41,
+        rotationSpeed: 0.012,
+        colorHex: '#4DA3FF',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/as17-148-22727/as17-148-22727~orig.jpg',
+            caption: 'NASA Apollo 17 Original Hasselblad Blue Marble Portrait',
+            credit: 'NASA / Apollo 17 Crew'
+          },
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA18033/PIA18033~orig.jpg',
+            caption: 'NASA DSCOVR EPIC Camera True Color Earth Disc',
+            credit: 'NASA / NOAA'
+          }
+        ],
+        gases: [{ name: 'Nitrogen (N2)', pct: 78.08 }, { name: 'Oxygen (O2)', pct: 20.95 }, { name: 'Argon (Ar)', pct: 0.93 }, { name: 'Carbon Dioxide', pct: 0.04 }],
+        missions: [
+          { name: 'Apollo 8–17', year: '1968–1972', detail: 'Humanity first departed low Earth orbit and surveyed Earth from lunar space.' },
+          { name: 'ISS Orbit', year: '1998–Present', detail: 'Continuous human presence conducting orbital microgravity science.' }
+        ]
+      },
+      {
+        id: 'mars',
+        name: 'Mars',
+        order: 'PLANET IV',
+        type: 'Terrestrial Planet',
+        badge: 'TERRESTRIAL // 1.52 AU',
+        realAU: 1.524,
+        distKm: '227,900,000 km',
+        radiusKm: '3,389 km',
+        period: '686.98 Days',
+        temp: '-63°C (210 K)',
+        gravity: '0.38 g (3.71 m/s²)',
+        velocity: '24.07 km/s',
+        escapeKm: '5.03 km/s',
+        pressure: '0.636 kPa (0.006 atm)',
+        moons: '2 Moons (Phobos, Deimos)',
+        bio: 'Rust-hued desert world bearing ancient dry river valleys, massive volcanic shields like Olympus Mons (22 km high), and colossal canyons like Valles Marineris.',
+        size: 5.5,
+        compactRadius: 165,
+        realRadius: 235,
+        orbitSpeed: 0.016,
+        axialTilt: 0.44,
+        rotationSpeed: 0.011,
+        colorHex: '#E2583E',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA04591/PIA04591~orig.jpg',
+            caption: 'NASA Mars Global Surveyor Mars Orbiter Camera Mosaic',
+            credit: 'NASA / JPL / MSSS'
+          },
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA24424/PIA24424~orig.jpg',
+            caption: 'NASA Perseverance Rover Mastcam-Z Panorama of Jezero Crater',
+            credit: 'NASA / JPL-Caltech / ASU / MSSS'
+          }
+        ],
+        gases: [{ name: 'Carbon Dioxide (CO2)', pct: 95.3 }, { name: 'Nitrogen (N2)', pct: 2.6 }, { name: 'Argon (Ar)', pct: 1.9 }, { name: 'Oxygen (O2)', pct: 0.16 }],
+        missions: [
+          { name: 'Perseverance / Ingenuity', year: '2021–Present', detail: 'Seeking biosignatures in Jezero Crater and pioneering powered Martian flight.' },
+          { name: 'Curiosity Rover', year: '2012–Present', detail: 'Confirmed persistent ancient freshwater lake environments in Gale Crater.' }
+        ]
+      },
+      {
+        id: 'jupiter',
+        name: 'Jupiter',
+        order: 'PLANET V',
+        type: 'Gas Giant',
+        badge: 'GAS GIANT // 5.20 AU',
+        realAU: 5.204,
+        distKm: '778,500,000 km',
+        radiusKm: '69,911 km (11.2 R⊕)',
+        period: '11.86 Earth Years',
+        temp: '-110°C (163 K)',
+        gravity: '2.53 g (24.79 m/s²)',
+        velocity: '13.07 km/s',
+        escapeKm: '59.5 km/s',
+        pressure: '> 100 kPa',
+        moons: '95 Moons (Io, Europa, Ganymede, Callisto)',
+        bio: 'King of planets holding 2.5 times the mass of all other planets combined. Raging with ammonia-cloud storm bands and the Great Red Spot anticyclone.',
+        size: 22.0,
+        compactRadius: 230,
+        realRadius: 520,
+        orbitSpeed: 0.008,
+        axialTilt: 0.05,
+        rotationSpeed: 0.024,
+        colorHex: '#D4A373',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA02873/PIA02873~orig.jpg',
+            caption: 'NASA Cassini Spacecraft True Color Jupiter Global Portrait',
+            credit: 'NASA / JPL / University of Arizona'
+          },
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA22949/PIA22949~orig.jpg',
+            caption: 'NASA Juno Spacecraft JunoCam Ultra High-Res Jovian Swirls',
+            credit: 'NASA / JPL-Caltech / SwRI / MSSS / Gerald Eichstädt'
+          }
+        ],
+        gases: [{ name: 'Hydrogen (H2)', pct: 89.8 }, { name: 'Helium (He)', pct: 10.2 }, { name: 'Methane (CH4)', pct: 0.3 }],
+        missions: [
+          { name: 'Juno', year: '2016–Present', detail: 'Polar orbiter revealing deep atmospheric depth, lightning, and magnetic dynamo.' },
+          { name: 'Galileo', year: '1995–2003', detail: 'First dedicated orbiter, discovering subsurface ocean indications at Europa.' }
+        ]
+      },
+      {
+        id: 'saturn',
+        name: 'Saturn',
+        order: 'PLANET VI',
+        type: 'Gas Giant',
+        badge: 'GAS GIANT // 9.58 AU',
+        realAU: 9.582,
+        distKm: '1,433,500,000 km',
+        radiusKm: '58,232 km (9.1 R⊕)',
+        period: '29.45 Earth Years',
+        temp: '-140°C (133 K)',
+        gravity: '1.06 g (10.44 m/s²)',
+        velocity: '9.69 km/s',
+        escapeKm: '35.5 km/s',
+        pressure: '> 100 kPa',
+        moons: '146 Moons (Titan, Enceladus)',
+        bio: 'Crowned with the most extensive and brilliant ring system in the cosmos, spanning 280,000 km. Host to Titan, the only moon with a dense nitrogen atmosphere and liquid methane lakes.',
+        size: 18.0,
+        compactRadius: 290,
+        realRadius: 850,
+        orbitSpeed: 0.005,
+        hasRings: true,
+        axialTilt: 0.47,
+        rotationSpeed: 0.021,
+        colorHex: '#F4D06F',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA01482/PIA01482~orig.jpg',
+            caption: 'NASA Cassini Spacecraft Natural Color Global Portrait',
+            credit: 'NASA / JPL / Space Science Institute'
+          },
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA08329/PIA08329~orig.jpg',
+            caption: 'Cassini Backlit Ring Eclipse with Earth visible in background',
+            credit: 'NASA / JPL-Caltech'
+          }
+        ],
+        gases: [{ name: 'Hydrogen (H2)', pct: 96.3 }, { name: 'Helium (He)', pct: 3.25 }, { name: 'Methane (CH4)', pct: 0.45 }],
+        missions: [
+          { name: 'Cassini-Huygens', year: '2004–2017', detail: 'Orbited Saturn for 13 years and landed Huygens probe on moon Titan.' }
+        ]
+      },
+      {
+        id: 'uranus',
+        name: 'Uranus',
+        order: 'PLANET VII',
+        type: 'Ice Giant',
+        badge: 'ICE GIANT // 19.20 AU',
+        realAU: 19.201,
+        distKm: '2,872,500,000 km',
+        radiusKm: '25,362 km',
+        period: '84.02 Earth Years',
+        temp: '-195°C (78 K)',
+        gravity: '0.89 g (8.69 m/s²)',
+        velocity: '6.81 km/s',
+        escapeKm: '21.3 km/s',
+        pressure: '> 100 kPa',
+        moons: '28 Moons (Titania, Oberon)',
+        bio: 'An aquamarine ice giant tilted 98° on its side, rolling through its orbit. Its atmosphere of hydrogen, helium, and methane creates the coldest planetary atmosphere in the system.',
+        size: 13.0,
+        compactRadius: 350,
+        realRadius: 1350,
+        orbitSpeed: 0.0035,
+        axialTilt: 1.71,
+        rotationSpeed: -0.015,
+        colorHex: '#70D6FF',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA18182/PIA18182~orig.jpg',
+            caption: 'NASA Voyager 2 Remastered Cyan Ice Atmosphere Capture',
+            credit: 'NASA / JPL-Caltech'
+          }
+        ],
+        gases: [{ name: 'Hydrogen (H2)', pct: 82.5 }, { name: 'Helium (He)', pct: 15.2 }, { name: 'Methane (CH4)', pct: 2.3 }],
+        missions: [
+          { name: 'Voyager 2', year: '1986', detail: 'Historic flyby discovering 10 new moons and dark narrow rings.' }
+        ]
+      },
+      {
+        id: 'neptune',
+        name: 'Neptune',
+        order: 'PLANET VIII',
+        type: 'Ice Giant',
+        badge: 'ICE GIANT // 30.10 AU',
+        realAU: 30.070,
+        distKm: '4,495,100,000 km',
+        radiusKm: '24,622 km',
+        period: '164.79 Earth Years',
+        temp: '-201°C (72 K)',
+        gravity: '1.14 g (11.15 m/s²)',
+        velocity: '5.43 km/s',
+        escapeKm: '23.5 km/s',
+        pressure: '> 100 kPa',
+        moons: '16 Moons (Triton, Proteus)',
+        bio: 'Deep azure blue world scourged by the solar system’s most ferocious winds exceeding 2,100 km/h. Radiates 2.6 times more energy than it absorbs from the distant Sun.',
+        size: 12.5,
+        compactRadius: 410,
+        realRadius: 1850,
+        orbitSpeed: 0.0025,
+        axialTilt: 0.49,
+        rotationSpeed: 0.016,
+        colorHex: '#3A86FF',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA01492/PIA01492~orig.jpg',
+            caption: 'NASA Voyager 2 Global Full Disc Portrait with Great Dark Spot',
+            credit: 'NASA / JPL'
+          }
+        ],
+        gases: [{ name: 'Hydrogen (H2)', pct: 80.0 }, { name: 'Helium (He)', pct: 19.0 }, { name: 'Methane (CH4)', pct: 1.5 }],
+        missions: [
+          { name: 'Voyager 2', year: '1989', detail: 'Only probe to visit Neptune, documenting active geysers on moon Triton.' }
+        ]
+      },
+      {
+        id: 'pluto',
+        name: 'Pluto',
+        order: 'DWARF PLANET // KUIPER BELT',
+        type: 'Dwarf Planet / Plutoid',
+        badge: 'KUIPER BELT // 39.48 AU',
+        realAU: 39.482,
+        distKm: '5,906,400,000 km',
+        radiusKm: '1,188 km',
+        period: '248.00 Earth Years',
+        temp: '-229°C (44 K)',
+        gravity: '0.06 g (0.62 m/s²)',
+        velocity: '4.74 km/s',
+        escapeKm: '1.21 km/s',
+        pressure: '1.0 Pa (10 µbar)',
+        moons: '5 Moons (Charon, Styx, Nix, Kerberos, Hydra)',
+        bio: 'Complex ice world in the Kuiper Belt possessing glacial plains of frozen nitrogen, methane mountains 3,500m tall, and the iconic heart-shaped Sputnik Planitia.',
+        size: 3.5,
+        compactRadius: 470,
+        realRadius: 2200,
+        orbitSpeed: 0.0018,
+        axialTilt: 2.13,
+        rotationSpeed: -0.004,
+        colorHex: '#C7A284',
+        images: [
+          {
+            url: 'https://images-assets.nasa.gov/image/PIA19952/PIA19952~orig.jpg',
+            caption: 'NASA New Horizons High-Resolution Global Color Mosaic',
+            credit: 'NASA / JHUAPL / SwRI'
+          }
+        ],
+        gases: [{ name: 'Nitrogen (N2)', pct: 99.0 }, { name: 'Methane (CH4)', pct: 0.5 }, { name: 'Carbon Monoxide', pct: 0.5 }],
+        missions: [
+          { name: 'New Horizons', year: '2015', detail: 'Historic flyby within 12,500 km, discovering active nitrogen glaciers.' }
+        ]
+      }
+    ];
+    function genSunTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 256;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0, '#FFFBEB');
+      grad.addColorStop(0.25, '#FDE047');
+      grad.addColorStop(0.5, '#F59E0B');
+      grad.addColorStop(0.75, '#D97706');
+      grad.addColorStop(1, '#92400E');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 256);
+      for (let i = 0; i < 350; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.45)' : 'rgba(180,83,9,0.35)';
+        ctx.beginPath();
+        ctx.arc(Math.random() * 512, Math.random() * 256, Math.random() * 8 + 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return new THREE.CanvasTexture(c);
+    }
+    function genMercuryTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#64748B';
+      ctx.fillRect(0, 0, 512, 256);
+      for (let i = 0; i < 400; i++) {
+        ctx.fillStyle = Math.random() > 0.5 ? '#94A3B8' : '#334155';
+        ctx.beginPath();
+        ctx.arc(Math.random() * 512, Math.random() * 256, Math.random() * 6 + 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return new THREE.CanvasTexture(c);
+    }
+    function genVenusTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 256;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0, '#FEF08A');
+      grad.addColorStop(0.3, '#FDE047');
+      grad.addColorStop(0.6, '#EAB308');
+      grad.addColorStop(1, '#CA8A04');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 256);
+      ctx.fillStyle = 'rgba(254, 240, 138, 0.3)';
+      for (let i = 0; i < 30; i++) {
+        ctx.fillRect(0, Math.random() * 256, 512, Math.random() * 10 + 2);
+      }
+      return new THREE.CanvasTexture(c);
+    }
+    function genEarthTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#0F2C59';
+      ctx.fillRect(0, 0, 1024, 512);
+      ctx.fillStyle = '#22577A';
+      ctx.fillRect(0, 0, 1024, 512);
+      ctx.fillStyle = '#38761D';
+      const continents = [
+        { x: 300, y: 180, r: 90 },
+        { x: 340, y: 320, r: 80 },
+        { x: 550, y: 160, r: 85 },
+        { x: 560, y: 260, r: 95 },
+        { x: 740, y: 180, r: 110 },
+        { x: 780, y: 340, r: 70 }
+      ];
+      continents.forEach(cnt => {
+        ctx.beginPath();
+        ctx.arc(cnt.x, cnt.y, cnt.r, 0, Math.PI * 2);
+        ctx.fill();
+        for (let j = 0; j < 8; j++) {
+          ctx.beginPath();
+          ctx.arc(cnt.x + (Math.random() - 0.5) * cnt.r * 1.6, cnt.y + (Math.random() - 0.5) * cnt.r * 1.6, Math.random() * 45 + 10, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+      ctx.fillStyle = '#F8FAFC';
+      ctx.beginPath(); ctx.arc(512, 15, 65, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(512, 497, 85, 0, Math.PI * 2); ctx.fill();
+      return new THREE.CanvasTexture(c);
+    }
+    function genCloudsTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024; c.height = 512;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = 'rgba(0,0,0,0)';
+      ctx.fillRect(0, 0, 1024, 512);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+      for (let i = 0; i < 70; i++) {
+        ctx.beginPath();
+        const cx = Math.random() * 1024;
+        const cy = Math.random() * 512;
+        ctx.arc(cx, cy, Math.random() * 35 + 15, 0, Math.PI * 2);
+        ctx.arc(cx + 25, cy + 5, Math.random() * 25 + 10, 0, Math.PI * 2);
+        ctx.arc(cx - 20, cy + 10, Math.random() * 20 + 8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      return new THREE.CanvasTexture(c);
+    }
+    function genMarsTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#C2410C';
+      ctx.fillRect(0, 0, 512, 256);
+      ctx.fillStyle = '#9A3412';
+      for (let i = 0; i < 80; i++) {
+        ctx.beginPath();
+        ctx.arc(Math.random() * 512, Math.random() * 256, Math.random() * 30 + 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath(); ctx.arc(256, 8, 25, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(256, 248, 20, 0, Math.PI * 2); ctx.fill();
+      return new THREE.CanvasTexture(c);
+    }
+    function genJupiterTexture() {
+      const c = document.createElement('canvas');
+      c.width = 1024; c.height = 512;
+      const ctx = c.getContext('2d');
+      const colors = ['#E2D5C3', '#C79262', '#A3582A', '#DDB58E', '#C79262', '#8F4B23', '#EAE0D3'];
+      for (let y = 0; y < 512; y++) {
+        const col = colors[Math.floor((y / 512) * colors.length)];
+        ctx.fillStyle = col;
+        ctx.fillRect(0, y, 1024, 1);
+      }
+      ctx.fillStyle = '#B91C1C';
+      ctx.beginPath(); ctx.ellipse(660, 320, 70, 40, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#EA580C';
+      ctx.beginPath(); ctx.ellipse(660, 320, 48, 24, 0, 0, Math.PI * 2); ctx.fill();
+      return new THREE.CanvasTexture(c);
+    }
+    function genSaturnTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 256;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0, '#EAB308');
+      grad.addColorStop(0.5, '#CA8A04');
+      grad.addColorStop(1, '#854D0E');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 256);
+      return new THREE.CanvasTexture(c);
+    }
+    function genSaturnRingsTexture() {
+      const c = document.createElement('canvas');
+      c.width = 512; c.height = 64;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 512, 0);
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(0.18, 'rgba(234, 179, 8, 0.3)');
+      grad.addColorStop(0.40, 'rgba(250, 204, 21, 0.9)');
+      grad.addColorStop(0.68, 'rgba(0,0,0,0.02)');
+      grad.addColorStop(0.74, 'rgba(234, 179, 8, 0.75)');
+      grad.addColorStop(0.97, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 64);
+      return new THREE.CanvasTexture(c);
+    }
+    function genUranusTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 128;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 128);
+      grad.addColorStop(0, '#A5F3FC');
+      grad.addColorStop(0.5, '#67E8F9');
+      grad.addColorStop(1, '#06B6D4');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 256, 128);
+      return new THREE.CanvasTexture(c);
+    }
+    function genNeptuneTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 128;
+      const ctx = c.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, 128);
+      grad.addColorStop(0, '#38BDF8');
+      grad.addColorStop(0.5, '#2563EB');
+      grad.addColorStop(1, '#1E40AF');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 256, 128);
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.fillRect(0, 60, 256, 4);
+      ctx.fillRect(0, 85, 256, 6);
+      return new THREE.CanvasTexture(c);
+    }
+    function genPlutoTexture() {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 128;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#A8A29E';
+      ctx.fillRect(0, 0, 256, 128);
+      ctx.fillStyle = '#78716C';
+      for (let i = 0; i < 40; i++) {
+        ctx.beginPath();
+        ctx.arc(Math.random() * 256, Math.random() * 128, Math.random() * 15 + 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#F5F5F4';
+      ctx.beginPath();
+      ctx.arc(120, 60, 28, 0, Math.PI * 2);
+      ctx.arc(145, 60, 28, 0, Math.PI * 2);
+      ctx.fill();
+      return new THREE.CanvasTexture(c);
+    }
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 150000);
+    camera.position.set(0, 1200, 2200);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+    container.appendChild(renderer.domElement);
+    const starCount = 12000;
+    const starGeom = new THREE.BufferGeometry();
+    const starPos = new Float32Array(starCount * 3);
+    const starCols = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount * 3; i += 3) {
+      starPos[i] = (Math.random() - 0.5) * 30000;
+      starPos[i + 1] = (Math.random() - 0.5) * 30000;
+      starPos[i + 2] = (Math.random() - 0.5) * 30000;
+      const pick = Math.random();
+      const col = pick > 0.85 ? new THREE.Color(0x93C5FD) : pick > 0.65 ? new THREE.Color(0xC4B5FD) : new THREE.Color(0xEDF2FF);
+      starCols[i] = col.r; starCols[i + 1] = col.g; starCols[i + 2] = col.b;
+    }
+    starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    starGeom.setAttribute('color', new THREE.BufferAttribute(starCols, 3));
+    const starMat = new THREE.PointsMaterial({ size: 1.8, vertexColors: true, transparent: true, opacity: 0.8 });
+    scene.add(new THREE.Points(starGeom, starMat));
+    const sunLight = new THREE.PointLight(0xFFFFFF, 3.5, 40000, 0.3);
+    sunLight.position.set(0, 0, 0);
+    scene.add(sunLight);
+    const ambientLight = new THREE.AmbientLight(0x0F172A, 0.65);
+    scene.add(ambientLight);
+    let currentScaleMode = 'real';
+    let showOrbits = true;
+    let simSpeed = 1.0;
+    let selectedBodyId = null;
+    let currentActiveImgIdx = 0;
+    const celestialObjects = {};
+    const orbitMeshes = [];
+    solarData.forEach(p => {
+      const group = new THREE.Group();
+      group.name = p.id;
+      let orbitRadius = (currentScaleMode === 'real') ? p.realRadius : p.compactRadius;
+      let orbitLine = null;
+      if (orbitRadius > 0) {
+        const segs = 180;
+        const pos = new Float32Array((segs + 1) * 3);
+        for (let i = 0; i <= segs; i++) {
+          const theta = (i / segs) * Math.PI * 2;
+          pos[i * 3] = Math.cos(theta) * orbitRadius;
+          pos[i * 3 + 1] = 0;
+          pos[i * 3 + 2] = Math.sin(theta) * orbitRadius;
+        }
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        const mat = new THREE.LineBasicMaterial({ color: 0x334155, transparent: true, opacity: 0.4 });
+        orbitLine = new THREE.Line(geom, mat);
+        scene.add(orbitLine);
+        orbitMeshes.push({ id: p.id, line: orbitLine });
+      }
+      let texture;
+      if (p.id === 'sun') texture = genSunTexture();
+      else if (p.id === 'mercury') texture = genMercuryTexture();
+      else if (p.id === 'venus') texture = genVenusTexture();
+      else if (p.id === 'earth') texture = genEarthTexture();
+      else if (p.id === 'mars') texture = genMarsTexture();
+      else if (p.id === 'jupiter') texture = genJupiterTexture();
+      else if (p.id === 'saturn') texture = genSaturnTexture();
+      else if (p.id === 'uranus') texture = genUranusTexture();
+      else if (p.id === 'neptune') texture = genNeptuneTexture();
+      else if (p.id === 'pluto') texture = genPlutoTexture();
+      let sphereMat;
+      if (p.id === 'sun') {
+        sphereMat = new THREE.MeshBasicMaterial({ map: texture });
+      } else {
+        sphereMat = new THREE.MeshStandardMaterial({
+          map: texture,
+          roughness: 0.85,
+          metalness: 0.08
+        });
+      }
+      const sphereGeom = new THREE.SphereGeometry(p.size, 48, 48);
+      const sphere = new THREE.Mesh(sphereGeom, sphereMat);
+      sphere.rotation.z = p.axialTilt || 0;
+      group.add(sphere);
+      if (p.id === 'sun') {
+        const glowGeom = new THREE.SphereGeometry(p.size * 1.25, 32, 32);
+        const glowMat = new THREE.MeshBasicMaterial({
+          color: 0xF59E0B,
+          transparent: true,
+          opacity: 0.28,
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending
+        });
+        const glowMesh = new THREE.Mesh(glowGeom, glowMat);
+        group.add(glowMesh);
+      }
+      if (p.id === 'earth') {
+        const cloudsMat = new THREE.MeshStandardMaterial({
+          map: genCloudsTexture(),
+          transparent: true,
+          opacity: 0.55,
+          blending: THREE.AdditiveBlending
+        });
+        const cloudsMesh = new THREE.Mesh(new THREE.SphereGeometry(p.size * 1.025, 48, 48), cloudsMat);
+        group.add(cloudsMesh);
+        group.userData.clouds = cloudsMesh;
+        const moonMat = new THREE.MeshStandardMaterial({ color: 0xD1D5DB, roughness: 0.9 });
+        const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(2.2, 24, 24), moonMat);
+        moonMesh.position.set(16, 0, 0);
+        group.add(moonMesh);
+        group.userData.moon = moonMesh;
+      }
+      if (p.hasRings) {
+        const ringGeom = new THREE.RingGeometry(p.size * 1.35, p.size * 2.5, 64);
+        const ringMat = new THREE.MeshBasicMaterial({
+          map: genSaturnRingsTexture(),
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.95
+        });
+        const ring = new THREE.Mesh(ringGeom, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.rotation.y = 0.15;
+        group.add(ring);
+      }
+      if (orbitRadius > 0) {
+        const startAngle = Math.random() * Math.PI * 2;
+        group.position.x = Math.cos(startAngle) * orbitRadius;
+        group.position.z = Math.sin(startAngle) * orbitRadius;
+        celestialObjects[p.id] = { group, sphere, data: p, orbitAngle: startAngle, orbitLine };
+      } else {
+        group.position.set(0, 0, 0);
+        celestialObjects[p.id] = { group, sphere, data: p, orbitAngle: 0, orbitLine: null };
+      }
+      scene.add(group);
+    });
+    const astCount = 2400;
+    const astGeom = new THREE.BufferGeometry();
+    const astPos = new Float32Array(astCount * 3);
+    for (let i = 0; i < astCount * 3; i += 3) {
+      const r = 320 + Math.random() * 80;
+      const th = Math.random() * Math.PI * 2;
+      astPos[i] = Math.cos(th) * r;
+      astPos[i + 1] = (Math.random() - 0.5) * 16;
+      astPos[i + 2] = Math.sin(th) * r;
+    }
+    astGeom.setAttribute('position', new THREE.BufferAttribute(astPos, 3));
+    const astMat = new THREE.PointsMaterial({ color: 0x64748B, size: 1.5, transparent: true, opacity: 0.65 });
+    const asteroidBelt = new THREE.Points(astGeom, astMat);
+    scene.add(asteroidBelt);
+    const labelsContainer = document.getElementById('labels-container');
+    const labelElements = {};
+    solarData.forEach(p => {
+      const tag = document.createElement('div');
+      tag.className = 'planet-tag flex flex-col items-center group';
+      tag.innerHTML = `
+        <div class="px-2 py-0.5 rounded-full text-[10px] font-mono tracking-wider glass-nav text-white/80 border border-white/10 group-hover:border-blue-400 group-hover:text-blue-300 transition-all flex items-center space-x-1">
+          <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${p.colorHex}"></span>
+          <span>${p.name.split(' ')[0]}</span>
+          <span class="text-white/40 text-[9px]">${p.realAU} AU</span>
+        </div>
+        <div class="w-px h-2.5 bg-white/20 group-hover:bg-blue-400"></div>
+        <div class="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-blue-400 group-hover:scale-150 transition-all"></div>
+      `;
+      tag.onclick = (e) => {
+        e.stopPropagation();
+        selectPlanet(p.id);
+      };
+      labelsContainer.appendChild(tag);
+      labelElements[p.id] = tag;
+    });
+    let orbitCamAngle = 0.45;
+    let orbitCamElevation = 0.58;
+    let orbitCamDist = 2400;
+    let isUserDragging = false;
+    let lastX = 0, lastY = 0;
+    let targetLookAt = new THREE.Vector3(0, 0, 0);
+    let currentLookAt = new THREE.Vector3(0, 0, 0);
+    container.addEventListener('mousedown', (e) => {
+      isUserDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      initSound();
+    });
+    window.addEventListener('mouseup', () => isUserDragging = false);
+    container.addEventListener('mousemove', (e) => {
+      if (isUserDragging) {
+        const dx = e.clientX - lastX;
+        const dy = e.clientY - lastY;
+        orbitCamAngle -= dx * 0.005;
+        orbitCamElevation += dy * 0.005;
+        orbitCamElevation = Math.max(0.04, Math.min(Math.PI / 2.05, orbitCamElevation));
+        lastX = e.clientX;
+        lastY = e.clientY;
+      }
+    });
+    container.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      orbitCamDist += e.deltaY * (orbitCamDist * 0.0015);
+      orbitCamDist = Math.max(18, Math.min(12000, orbitCamDist));
+      playTone(400 + Math.min(orbitCamDist, 2000) * 0.2, 0.03);
+    });
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    container.addEventListener('click', (e) => {
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const spheres = Object.values(celestialObjects).map(co => co.sphere);
+      const hits = raycaster.intersectObjects(spheres);
+      if (hits.length > 0) {
+        const hit = hits[0].object;
+        const obj = Object.values(celestialObjects).find(co => co.sphere === hit);
+        if (obj) {
+          selectPlanet(obj.data.id);
+        }
+      }
+    });
+    function selectPlanet(id) {
+      const co = celestialObjects[id];
+      if (!co) return;
+      selectedBodyId = id;
+      currentActiveImgIdx = 0;
+      playTone(660, 0.1);
+      orbitCamDist = Math.max(co.data.size * 3.6, 28);
+      orbitCamElevation = 0.32;
+      document.querySelectorAll('.dock-btn').forEach(btn => {
+        const isMatch = btn.getAttribute('data-id') === id;
+        btn.classList.toggle('bg-white/15', isMatch);
+        btn.classList.toggle('text-white', isMatch);
+        btn.classList.toggle('font-bold', isMatch);
+        btn.classList.toggle('text-white/60', !isMatch);
+      });
+      orbitMeshes.forEach(om => {
+        om.line.material.color.set(om.id === id ? 0x60A5FA : 0x334155);
+        om.line.material.opacity = (om.id === id) ? 0.9 : (showOrbits ? 0.35 : 0);
+        om.line.visible = (om.id === id) ? true : showOrbits;
+      });
+      updateCard(co.data);
+    }
+    function zoomToOverview() {
+      selectedBodyId = null;
+      playTone(440, 0.12);
+      orbitCamDist = (currentScaleMode === 'real') ? 2400 : 850;
+      orbitCamElevation = 0.58;
+      targetLookAt.set(0, 0, 0);
+      const card = document.getElementById('planetCard');
+      card.classList.add('translate-x-[130%]', 'pointer-events-none');
+      card.classList.remove('pointer-events-auto');
+      document.querySelectorAll('.dock-btn').forEach(btn => {
+        btn.classList.remove('bg-white/15', 'text-white', 'font-bold');
+        btn.classList.add('text-white/60');
+      });
+      orbitMeshes.forEach(om => {
+        om.line.material.color.set(0x334155);
+        om.line.material.opacity = showOrbits ? 0.35 : 0;
+        om.line.visible = showOrbits;
+      });
+    }
+    function updateCard(p) {
+      const card = document.getElementById('planetCard');
+      document.getElementById('cardBadge').textContent = p.badge;
+      document.getElementById('cardTitle').textContent = p.name;
+      document.getElementById('cardOrder').textContent = p.order;
+      document.getElementById('cardAU').textContent = p.realAU + ' AU';
+      document.getElementById('cardKm').textContent = p.distKm + ' from Sun';
+      const earthObj = celestialObjects['earth'];
+      const curObj = celestialObjects[p.id];
+      if (earthObj && curObj) {
+        const distUnits = earthObj.group.position.distanceTo(curObj.group.position);
+        const earthAU = (distUnits / (currentScaleMode === 'real' ? 155 : 130)).toFixed(2);
+        const distKmEstimate = (parseFloat(earthAU) * 149598000).toLocaleString();
+        document.getElementById('cardEarthDist').textContent = `${earthAU} AU (${distKmEstimate} km)`;
+      }
+      document.getElementById('cardRadius').textContent = p.radiusKm;
+      document.getElementById('cardPeriod').textContent = p.period;
+      document.getElementById('cardTemp').textContent = p.temp;
+      document.getElementById('cardGravity').textContent = p.gravity;
+      document.getElementById('cardBio').textContent = p.bio;
+      if (p.escapeKm) document.getElementById('cardEscape').textContent = p.escapeKm;
+      if (p.pressure) document.getElementById('cardPressure').textContent = p.pressure;
+      const imgEl = document.getElementById('planetWebImg');
+      const creditTag = document.getElementById('nasaCreditTag');
+      const thumbStrip = document.getElementById('thumbStrip');
+      if (p.images && p.images.length > 0) {
+        const activeImg = p.images[currentActiveImgIdx] || p.images[0];
+        imgEl.src = activeImg.url;
+        creditTag.textContent = activeImg.credit;
+        thumbStrip.innerHTML = '';
+        p.images.forEach((img, idx) => {
+          const btn = document.createElement('button');
+          btn.className = `w-5 h-5 rounded-full overflow-hidden border ${idx === currentActiveImgIdx ? 'border-white ring-1 ring-white/50' : 'border-white/30 opacity-60'} transition-all`;
+          btn.innerHTML = `<img src="${img.url}" class="w-full h-full object-cover">`;
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            currentActiveImgIdx = idx;
+            imgEl.src = img.url;
+            creditTag.textContent = img.credit;
+            playTone(880, 0.05);
+            updateCard(p);
+          };
+          thumbStrip.appendChild(btn);
+        });
+      }
+      const atmoContainer = document.getElementById('atmoBars');
+      atmoContainer.innerHTML = '';
+      if (p.gases) {
+        p.gases.forEach(g => {
+          atmoContainer.innerHTML += `
+            <div>
+              <div class="flex justify-between text-[10px] text-slate-300 mb-0.5">
+                <span>${g.name}</span>
+                <span class="text-white font-bold">${g.pct}%</span>
+              </div>
+              <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-600 to-blue-400" style="width: ${Math.min(g.pct, 100)}%"></div>
+              </div>
+            </div>
+          `;
+        });
+      }
+      const missionsContainer = document.getElementById('missionsList');
+      missionsContainer.innerHTML = '';
+      if (p.missions) {
+        p.missions.forEach(m => {
+          missionsContainer.innerHTML += `
+            <div class="bg-white/[0.03] p-2.5 rounded-lg border border-white/5">
+              <div class="flex justify-between text-[11px] font-bold text-white">
+                <span>${m.name}</span>
+                <span class="text-blue-400">${m.year}</span>
+              </div>
+              <p class="text-[10px] text-slate-400 font-sans mt-0.5">${m.detail}</p>
+            </div>
+          `;
+        });
+      }
+      switchDrawerTab('overview');
+      card.classList.remove('translate-x-[130%]', 'pointer-events-none');
+      card.classList.add('pointer-events-auto');
+    }
+    function switchDrawerTab(tabName) {
+      playTone(550, 0.04);
+      ['overview', 'specs', 'missions'].forEach(t => {
+        const btn = document.getElementById('dtabBtn-' + t);
+        const content = document.getElementById('dtab-' + t);
+        const isMatch = t === tabName;
+        if (btn) {
+          btn.classList.toggle('bg-white/15', isMatch);
+          btn.classList.toggle('text-white', isMatch);
+          btn.classList.toggle('text-slate-400', !isMatch);
+        }
+        if (content) {
+          content.classList.toggle('active', isMatch);
+        }
+      });
+    }
+    function handleImageError(img) {
+      img.onerror = null;
+      img.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200"><rect fill="%23090E1C" width="400" height="200"/><circle cx="200" cy="100" r="50" fill="%233B82F6" opacity="0.3"/><text x="200" y="105" fill="%2393C5FD" font-family="monospace" font-size="12" text-anchor="middle">SENSORY TELEMETRY LOCKED</text></svg>';
+    }
+    function openImageLightbox() {
+      const co = celestialObjects[selectedBodyId || 'earth'];
+      if (!co || !co.data.images) return;
+      const activeImg = co.data.images[currentActiveImgIdx] || co.data.images[0];
+      document.getElementById('lightboxImg').src = activeImg.url;
+      document.getElementById('lightboxTitle').textContent = co.data.name;
+      document.getElementById('lightboxCaption').textContent = activeImg.caption + ' — ' + activeImg.credit;
+      document.getElementById('photoLightbox').classList.remove('hidden');
+      playTone(920, 0.1);
+    }
+    function closeImageLightbox() {
+      document.getElementById('photoLightbox').classList.add('hidden');
+    }
+    function navigatePlanet(dir) {
+      const curIdx = solarData.findIndex(p => p.id === (selectedBodyId || 'earth'));
+      const nextIdx = (curIdx + dir + solarData.length) % solarData.length;
+      selectPlanet(solarData[nextIdx].id);
+    }
+    function setScaleMode(mode) {
+      currentScaleMode = mode;
+      playTone(550, 0.08);
+      document.getElementById('btnScaleReal').classList.toggle('bg-white', mode === 'real');
+      document.getElementById('btnScaleReal').classList.toggle('text-[#0B0F19]', mode === 'real');
+      document.getElementById('btnScaleReal').classList.toggle('text-slate-400', mode !== 'real');
+      document.getElementById('btnScaleCompact').classList.toggle('bg-white', mode === 'compact');
+      document.getElementById('btnScaleCompact').classList.toggle('text-[#0B0F19]', mode === 'compact');
+      document.getElementById('btnScaleCompact').classList.toggle('text-slate-400', mode !== 'compact');
+      solarData.forEach(p => {
+        const co = celestialObjects[p.id];
+        if (!co) return;
+        const newRadius = (mode === 'real') ? p.realRadius : p.compactRadius;
+        if (co.orbitLine && newRadius > 0) {
+          const segs = 180;
+          const pos = co.orbitLine.geometry.attributes.position.array;
+          for (let i = 0; i <= segs; i++) {
+            const theta = (i / segs) * Math.PI * 2;
+            pos[i * 3] = Math.cos(theta) * newRadius;
+            pos[i * 3 + 1] = 0;
+            pos[i * 3 + 2] = Math.sin(theta) * newRadius;
+          }
+          co.orbitLine.geometry.attributes.position.needsUpdate = true;
+        }
+        if (newRadius > 0) {
+          co.group.position.x = Math.cos(co.orbitAngle) * newRadius;
+          co.group.position.z = Math.sin(co.orbitAngle) * newRadius;
+        }
+      });
+      if (!selectedBodyId) {
+        orbitCamDist = (mode === 'real') ? 2400 : 850;
+      }
+    }
+    function toggleOrbits() {
+      showOrbits = !showOrbits;
+      playTone(480, 0.05);
+      const label = document.getElementById('orbitsLabel');
+      const btn = document.getElementById('btnOrbits');
+      if (label) label.textContent = showOrbits ? 'ORBIT PATHS: ON' : 'ORBIT PATHS: OFF';
+      if (btn) {
+        if (showOrbits) {
+          btn.className = "px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-white/15 border border-white/25 text-white flex items-center space-x-1.5 hover:bg-white/20";
+        } else {
+          btn.className = "px-3 py-1 rounded-full text-[11px] font-semibold transition-all bg-white/5 border border-white/10 text-slate-400 flex items-center space-x-1.5 hover:text-white hover:border-white/20";
+        }
+      }
+      orbitMeshes.forEach(om => {
+        om.line.visible = showOrbits;
+      });
+    }
+    function setSpeed(spd) {
+      simSpeed = spd;
+      playTone(520, 0.05);
+      [0, 0.5, 1, 5, 25].forEach(s => {
+        const id = 'spd-' + (s === 0.5 ? '05' : s);
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.classList.toggle('bg-white/20', s === spd);
+          btn.classList.toggle('text-white', s === spd);
+          btn.classList.toggle('font-bold', s === spd);
+          btn.classList.toggle('text-white/40', s !== spd);
+        }
+      });
+    }
+    let audioCtx = null;
+    let isAudioOn = false;
+    function initSound() {
+      if (audioCtx) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+        isAudioOn = true;
+      } catch (e) {}
+    }
+    function playTone(freq = 440, duration = 0.07) {
+      if (!audioCtx || !isAudioOn) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+    function toggleAudio() {
+      if (!audioCtx) {
+        initSound();
+        document.getElementById('audioIcon').textContent = '🔊';
+        return;
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+        isAudioOn = true;
+        document.getElementById('audioIcon').textContent = '🔊';
+      } else {
+        audioCtx.suspend();
+        isAudioOn = false;
+        document.getElementById('audioIcon').textContent = '🔇';
+      }
+    }
+    function checkMobile() {
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isSmallScreen = window.innerWidth <= 768;
+      const blocker = document.getElementById('mobileBlocker');
+      if (blocker) {
+        blocker.style.display = (isMobileUA || isSmallScreen) ? 'flex' : 'none';
+      }
+    }
+    window.addEventListener('resize', checkMobile);
+    checkMobile();
+    const clock = new THREE.Clock();
+    const tempVec = new THREE.Vector3();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      Object.values(celestialObjects).forEach(co => {
+        const p = co.data;
+        const curRadius = (currentScaleMode === 'real') ? p.realRadius : p.compactRadius;
+        co.sphere.rotation.y += p.rotationSpeed * delta * 20;
+        if (co.group.userData.clouds) {
+          co.group.userData.clouds.rotation.y += 0.0035;
+        }
+        if (co.group.userData.moon) {
+          const mAngle = Date.now() * 0.001;
+          co.group.userData.moon.position.set(Math.cos(mAngle) * 16, 0, Math.sin(mAngle) * 16);
+        }
+        if (curRadius > 0 && simSpeed > 0) {
+          co.orbitAngle += p.orbitSpeed * delta * simSpeed * 1.5;
+          co.group.position.x = Math.cos(co.orbitAngle) * curRadius;
+          co.group.position.z = Math.sin(co.orbitAngle) * curRadius;
+        }
+        if (labelElements[p.id]) {
+          co.group.getWorldPosition(tempVec);
+          tempVec.y += p.size + 4;
+          tempVec.project(camera);
+          if (tempVec.z < 1.0) {
+            const screenX = (tempVec.x * 0.5 + 0.5) * window.innerWidth;
+            const screenY = (-(tempVec.y * 0.5) + 0.5) * window.innerHeight;
+            const el = labelElements[p.id];
+            el.style.left = screenX + 'px';
+            el.style.top = screenY + 'px';
+            const distToCam = camera.position.distanceTo(co.group.position);
+            const isTooClose = (selectedBodyId === p.id && distToCam < p.size * 5);
+            el.style.opacity = isTooClose ? '0' : '1';
+            el.style.display = (screenX < -100 || screenX > window.innerWidth + 100 || screenY < -100 || screenY > window.innerHeight + 100) ? 'none' : 'flex';
+          } else {
+            labelElements[p.id].style.display = 'none';
+          }
+        }
+      });
+      if (asteroidBelt && simSpeed > 0) {
+        asteroidBelt.rotation.y += 0.0003 * simSpeed;
+      }
       if (selectedBodyId && celestialObjects[selectedBodyId]) {
         const targetGroup = celestialObjects[selectedBodyId].group;
         targetLookAt.copy(targetGroup.position);
@@ -26,11 +1487,8 @@
     zoomToOverview();
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        const guide = document.getElementById('guideModal');
         const lightbox = document.getElementById('photoLightbox');
-        if (guide && !guide.classList.contains('hidden')) {
-          toggleGuideModal();
-        } else if (lightbox && !lightbox.classList.contains('hidden')) {
+        if (lightbox && !lightbox.classList.contains('hidden')) {
           closeImageLightbox();
         } else {
           zoomToOverview();
