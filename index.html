@@ -124,7 +124,7 @@
           <span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-white/10 border border-white/20 text-slate-300">SOL SYSTEM</span>
         </div>
         <div class="text-[10px] font-mono text-slate-400 tracking-wider">
-          NASA IMAGERY
+          NASA IMAGERY // 10 CELESTIAL BODIES // 2400
         </div>
       </div>
     </div>
@@ -164,7 +164,7 @@
       <div class="flex items-center justify-between pb-3 border-b border-white/10">
         <div class="flex items-center space-x-2 font-mono text-[10px] text-slate-300">
           <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-          <span id="cardBadge" class="tracking-widest uppercase font-semibold text-slate-200">TERRESTRIAL PLANET
+          <span id="cardBadge" class="tracking-widest uppercase font-semibold text-slate-200">TERRESTRIAL PLANET // 1.00 AU</span>
         </div>
         <button onclick="zoomToOverview()" class="text-slate-400 hover:text-white text-xs font-mono transition-colors px-2 py-0.5 rounded hover:bg-white/10">
           ✕ ESC
@@ -272,52 +272,56 @@
       </div>
     </div>
   </div>
-  <footer class="absolute bottom-5 left-0 right-0 z-30 flex justify-center pointer-events-none px-4">
-    <nav class="glass-dock px-3.5 py-2.5 rounded-full flex items-center space-x-1 sm:space-x-2 pointer-events-auto overflow-x-auto max-w-full">
-      <button onclick="selectPlanet('sun')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="sun">
-        <span class="w-3.5 h-3.5 rounded-full bg-[#FFB703] group-hover:scale-125 transition-transform shadow-[0_0_12px_#FFB703]"></span>
-        <span class="hidden md:inline font-medium">Sun</span>
+  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 pointer-events-auto flex flex-col items-center max-w-[96vw]">
+    <div class="mb-1.5 px-3 py-0.5 rounded-full bg-[#0B0F19]/80 backdrop-blur border border-white/10 text-[9px] font-mono text-slate-300 tracking-[0.2em] uppercase flex items-center space-x-1.5 shadow-lg">
+      <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
+      <span>SELECT CELESTIAL BODY // DIRECT JUMP</span>
+    </div>
+    <nav class="glass-dock px-3 py-2 rounded-2xl flex items-center space-x-1 sm:space-x-1.5 border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.85)] overflow-x-auto max-w-full">
+      <button onclick="selectPlanet('sun')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="sun" title="Skip to Sol (The Sun)">
+        <span class="w-3 h-3 rounded-full bg-[#FFB703] group-hover:scale-125 transition-transform shadow-[0_0_10px_#FFB703]"></span>
+        <span class="font-medium">Sun</span>
       </button>
-      <button onclick="selectPlanet('mercury')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="mercury">
+      <button onclick="selectPlanet('mercury')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="mercury" title="Skip to Mercury">
         <span class="w-2.5 h-2.5 rounded-full bg-[#9E9E9E] group-hover:scale-125 transition-transform"></span>
-        <span class="hidden md:inline">Mercury</span>
+        <span>Mercury</span>
       </button>
-      <button onclick="selectPlanet('venus')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="venus">
-        <span class="w-3 h-3 rounded-full bg-[#E0A96D] group-hover:scale-125 transition-transform"></span>
-        <span class="hidden md:inline">Venus</span>
+      <button onclick="selectPlanet('venus')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="venus" title="Skip to Venus">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#E0A96D] group-hover:scale-125 transition-transform"></span>
+        <span>Venus</span>
       </button>
-      <button onclick="selectPlanet('earth')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="earth">
-        <span class="w-3 h-3 rounded-full bg-[#4DA3FF] group-hover:scale-125 transition-transform shadow-[0_0_10px_#4DA3FF]"></span>
-        <span class="hidden md:inline">Earth</span>
+      <button onclick="selectPlanet('earth')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="earth" title="Skip to Earth">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#4DA3FF] group-hover:scale-125 transition-transform shadow-[0_0_8px_#4DA3FF]"></span>
+        <span>Earth</span>
       </button>
-      <button onclick="selectPlanet('mars')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="mars">
+      <button onclick="selectPlanet('mars')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="mars" title="Skip to Mars">
         <span class="w-2.5 h-2.5 rounded-full bg-[#E2583E] group-hover:scale-125 transition-transform"></span>
-        <span class="hidden md:inline">Mars</span>
+        <span>Mars</span>
       </button>
-      <span class="text-white/20 px-1 hidden lg:inline">|</span>
-      <button onclick="selectPlanet('jupiter')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="jupiter">
-        <span class="w-3.5 h-3.5 rounded-full bg-[#D4A373] group-hover:scale-125 transition-transform"></span>
-        <span class="hidden md:inline">Jupiter</span>
+      <span class="text-white/20 px-0.5">|</span>
+      <button onclick="selectPlanet('jupiter')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="jupiter" title="Skip to Jupiter">
+        <span class="w-3 h-3 rounded-full bg-[#D4A373] group-hover:scale-125 transition-transform"></span>
+        <span>Jupiter</span>
       </button>
-      <button onclick="selectPlanet('saturn')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="saturn">
-        <span class="w-3.5 h-3.5 rounded-full bg-[#F4D06F] group-hover:scale-125 transition-transform"></span>
-        <span class="hidden md:inline">Saturn</span>
+      <button onclick="selectPlanet('saturn')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="saturn" title="Skip to Saturn">
+        <span class="w-3 h-3 rounded-full bg-[#F4D06F] group-hover:scale-125 transition-transform"></span>
+        <span>Saturn</span>
       </button>
-      <button onclick="selectPlanet('uranus')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="uranus">
-        <span class="w-3 h-3 rounded-full bg-[#70D6FF] group-hover:scale-125 transition-transform"></span>
-        <span class="hidden md:inline">Uranus</span>
+      <button onclick="selectPlanet('uranus')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="uranus" title="Skip to Uranus">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#70D6FF] group-hover:scale-125 transition-transform"></span>
+        <span>Uranus</span>
       </button>
-      <button onclick="selectPlanet('neptune')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="neptune">
-        <span class="w-3 h-3 rounded-full bg-[#3A86FF] group-hover:scale-125 transition-transform"></span>
-        <span class="hidden md:inline">Neptune</span>
+      <button onclick="selectPlanet('neptune')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="neptune" title="Skip to Neptune">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#3A86FF] group-hover:scale-125 transition-transform"></span>
+        <span>Neptune</span>
       </button>
-      <button onclick="selectPlanet('pluto')" class="dock-btn group flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs transition-all text-white/60 hover:text-white" data-id="pluto">
-        <span class="w-2.5 h-2.5 rounded-full bg-[#C7A284] group-hover:scale-125 transition-transform"></span>
-        <span class="hidden md:inline">Pluto</span>
+      <button onclick="selectPlanet('pluto')" class="dock-btn group flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono transition-all text-slate-300 hover:text-white hover:bg-white/10" data-id="pluto" title="Skip to Pluto">
+        <span class="w-2 h-2 rounded-full bg-[#C7A284] group-hover:scale-125 transition-transform"></span>
+        <span>Pluto</span>
       </button>
     </nav>
-  </footer>
-  <div class="fixed bottom-5 right-6 z-30 pointer-events-auto font-mono text-xs flex items-center space-x-2 glass-dock px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl text-slate-300 hover:text-white transition-all hover:border-white/30">
+  </div>
+  <div class="fixed bottom-6 right-6 z-30 pointer-events-auto font-mono text-xs hidden xl:flex items-center space-x-2 glass-dock px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl text-slate-300 hover:text-white transition-all hover:border-white/30">
     <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
     <span class="tracking-widest uppercase text-[11px]">MADE BY <strong class="text-white font-bold tracking-normal">BHUVESH</strong></span>
   </div>
@@ -1151,10 +1155,12 @@
       orbitCamElevation = 0.32;
       document.querySelectorAll('.dock-btn').forEach(btn => {
         const isMatch = btn.getAttribute('data-id') === id;
-        btn.classList.toggle('bg-white/15', isMatch);
+        btn.classList.toggle('bg-white/20', isMatch);
         btn.classList.toggle('text-white', isMatch);
         btn.classList.toggle('font-bold', isMatch);
-        btn.classList.toggle('text-white/60', !isMatch);
+        btn.classList.toggle('border-white/30', isMatch);
+        btn.classList.toggle('shadow-lg', isMatch);
+        btn.classList.toggle('text-slate-300', !isMatch);
       });
       orbitMeshes.forEach(om => {
         om.line.material.color.set(om.id === id ? 0x60A5FA : 0x334155);
@@ -1173,8 +1179,8 @@
       card.classList.add('translate-x-[130%]', 'pointer-events-none');
       card.classList.remove('pointer-events-auto');
       document.querySelectorAll('.dock-btn').forEach(btn => {
-        btn.classList.remove('bg-white/15', 'text-white', 'font-bold');
-        btn.classList.add('text-white/60');
+        btn.classList.remove('bg-white/20', 'text-white', 'font-bold', 'border-white/30', 'shadow-lg');
+        btn.classList.add('text-slate-300');
       });
       orbitMeshes.forEach(om => {
         om.line.material.color.set(0x334155);
