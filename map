@@ -1,0 +1,46 @@
+      if (selectedBodyId && celestialObjects[selectedBodyId]) {
+        const targetGroup = celestialObjects[selectedBodyId].group;
+        targetLookAt.copy(targetGroup.position);
+        targetLookAt.x -= (orbitCamDist * 0.25);
+        const targetX = targetGroup.position.x + Math.sin(orbitCamAngle) * Math.cos(orbitCamElevation) * orbitCamDist;
+        const targetY = targetGroup.position.y + Math.sin(orbitCamElevation) * orbitCamDist;
+        const targetZ = targetGroup.position.z + Math.cos(orbitCamAngle) * Math.cos(orbitCamElevation) * orbitCamDist;
+        camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.06);
+      } else {
+        targetLookAt.set(0, 0, 0);
+        const targetX = Math.sin(orbitCamAngle) * Math.cos(orbitCamElevation) * orbitCamDist;
+        const targetY = Math.sin(orbitCamElevation) * orbitCamDist;
+        const targetZ = Math.cos(orbitCamAngle) * Math.cos(orbitCamElevation) * orbitCamDist;
+        camera.position.lerp(new THREE.Vector3(targetX, targetY, targetZ), 0.06);
+      }
+      currentLookAt.lerp(targetLookAt, 0.06);
+      camera.lookAt(currentLookAt);
+      renderer.render(scene, camera);
+    }
+    animate();
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    zoomToOverview();
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const guide = document.getElementById('guideModal');
+        const lightbox = document.getElementById('photoLightbox');
+        if (guide && !guide.classList.contains('hidden')) {
+          toggleGuideModal();
+        } else if (lightbox && !lightbox.classList.contains('hidden')) {
+          closeImageLightbox();
+        } else {
+          zoomToOverview();
+        }
+      } else if (e.key === 'ArrowRight') {
+        navigatePlanet(1);
+      } else if (e.key === 'ArrowLeft') {
+        navigatePlanet(-1);
+      }
+    });
+  </script>
+</body>
+</html>
